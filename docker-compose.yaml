@@ -1,0 +1,54 @@
+services:
+  cache:
+    image: redis:7-alpine
+    volumes:
+      - redis-data:/data
+    command: [redis-server, --save, "60", "1"]
+    restart: always
+    read_only: true
+
+  database:
+    image: postgres:17-alpine
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=weblate
+      - POSTGRES_PASSWORD=weblate
+      - POSTGRES_DB=weblate
+    restart: always
+
+  weblate:
+    image: weblate/weblate
+    depends_on:
+      - cache
+      - database
+    volumes:
+      - weblate-data:/app/data
+      - weblate-cache:/app/cache
+    env_file:
+      - .env
+    environment:
+      - TEST_URL=${SERVICE_URL_WEBLATE}
+      - TEST_FQDN=${SERVICE_FQDN_WEBLATE}
+      - TEST_USER=${SERVICE_USER_WEBLATE}
+      - TEST_PASSWORD=${SERVICE_PASSWORD_WEBLATE}
+      - WEBLATE_SITE_DOMAIN=bsosogs8sggogsskgc0gck40.134.209.253.204.sslip.io
+      - POSTGRES_USER=weblate
+      - POSTGRES_PASSWORD=weblate
+      - POSTGRES_DB=weblate
+      - POSTGRES_HOST=database
+      - REDIS_HOST=cache
+      - WEBLATE_ADMIN_NAME=admin
+      - WEBLATE_ADMIN_EMAIL=admin@example.com
+      - WEBLATE_ADMIN_PASSWORD=changeme
+    restart: always
+    read_only: true
+    tmpfs:
+      - /run
+      - /tmp
+
+volumes:
+  weblate-cache: {}
+  weblate-data: {}
+  postgres-data: {}
+  redis-data: {}
